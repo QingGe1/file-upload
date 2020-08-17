@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>MDN Example - Embedded worker</title>
+  <script type="text/js-worker">
+  // 该脚本不会被 JS 引擎解析，因为它的 mime-type 是 text/js-worker。
+  var myVar = "Hello World!";
+  // 剩下的 worker 代码写到这里。
+</script>
+  <script type="text/javascript">
+    // 该脚本会被 JS 引擎解析，因为它的 mime-type 是 text/javascript。
+    function pageLog(sMsg) {
+      // 使用 fragment：这样浏览器只会进行一次渲染/重排。
+      var oFragm = document.createDocumentFragment();
+      oFragm.appendChild(document.createTextNode(sMsg));
+      oFragm.appendChild(document.createElement("br"));
+      document.querySelector("#logDisplay").appendChild(oFragm);
+    }
+  </script>
+  <script type="text/js-worker">
+  // 该脚本不会被 JS 引擎解析，因为它的 mime-type 是 text/js-worker。
+  onmessage = function (oEvent) {
+    postMessage(myVar);
+  };
+  // 剩下的 worker 代码写到这里。
+</script>
+  <script type="text/javascript">
+    // 该脚本会被 JS 引擎解析，因为它的 mime-type 是 text/javascript。
+
+    // 在过去...：
+    // 我们使用 blob builder
+    // ...但是现在我们使用 Blob...:
+    var blob = new Blob(
+      Array.prototype.map.call(
+        document.querySelectorAll("script[type=\"text\/js-worker\"]"),
+        function (oScript) { return oScript.textContent; }
+      ),
+      { type: "text/javascript" }
+    );
+    // 创建一个新的 document.worker 属性，包含所有 "text/js-worker" 脚本。
+    document.worker = new Worker(window.URL.createObjectURL(blob));
+
+    document.worker.onmessage = function (oEvent) {
+      pageLog("Received: " + oEvent.data);
+    };
+
+    // 启动 worker.
+    window.onload = function () { document.worker.postMessage(""); };
+  </script>
+</head>
+
+<body>
+  <div id="logDisplay"></div>
+</body>
+
+</html>
